@@ -404,7 +404,7 @@ def parse_scriptSig(d, bytes):
     d['pubkeys'] = pubkeys
     redeemScript = Transaction.multisig_script(pubkeys,2)
     d['redeemScript'] = redeemScript
-    d['address'] = hash_160_to_bc_address(hash_160(redeemScript.decode('hex')), 5)
+    d['address'] = hash_160_to_bc_address(hash_160(redeemScript.decode('hex')), 20)
 
 
 
@@ -427,7 +427,7 @@ def get_address_from_output_script(bytes):
     # p2sh
     match = [ opcodes.OP_HASH160, opcodes.OP_PUSHDATA4, opcodes.OP_EQUAL ]
     if match_decoded(decoded, match):
-        return 'address', hash_160_to_bc_address(decoded[1][1],5)
+        return 'address', hash_160_to_bc_address(decoded[1][1],20)
 
     return "(None)", "(None)"
 
@@ -474,6 +474,7 @@ def deserialize(raw):
     d = {}
     start = vds.read_cursor
     d['version'] = vds.read_int32()
+    d['timestamp'] = vds.read_int32()
     n_vin = vds.read_compact_size()
     d['inputs'] = []
     for i in xrange(n_vin):
@@ -492,10 +493,11 @@ class Transaction:
 
     def __str__(self):
         if self.raw is None:
-            self.raw = self.serialize(self.inputs, self.outputs, for_sig = None) # for_sig=-1 means do not sign
+            self.raw = self.serialize(self.timestamp, self.inputs, self.outputs, for_sig = None) # for_sig=-1 means do not sign
         return self.raw
 
-    def __init__(self, inputs, outputs, locktime=0):
+    def __init__(self, timestamp, inputs, outputs, locktime=0):
+        self.timestamp = timestamp
         self.inputs = inputs
         self.outputs = outputs
         self.locktime = locktime
@@ -503,17 +505,17 @@ class Transaction:
         
     @classmethod
     def deserialize(klass, raw):
-        self = klass([],[])
+        self = klass(0, [],[])
         self.update(raw)
         return self
 
     def update(self, raw):
         d = deserialize(raw)
         self.raw = raw
+        self.timestamp = d['timestamp']
         self.inputs = d['inputs']
         self.outputs = map(lambda x: (x['type'], x['address'], x['value']), d['outputs'])
         self.locktime = d['lockTime']
-
 
     @classmethod 
     def sweep(klass, privkeys, network, to_address, fee):
@@ -569,30 +571,35 @@ class Transaction:
 
 
     @classmethod
-    def pay_script(self, type, addr):
+    def pay_script(self, type, payto):
+        assert type == 'address' or type == 'pubkey' or type == 'op_return'
+
         if type == 'op_return':
-            h = addr.encode('hex')
+            h = payto.encode('hex')
             return '6a' + push_script(h)
+        elif type == 'pubkey':
+            script = push_script(payto)
+            script += 'ac'                 # op_checksig
+            return script
         else:
-            assert type == 'address'
-        addrtype, hash_160 = bc_address_to_hash_160(addr)
-        if addrtype == 0:
-            script = '76a9'                                      # op_dup, op_hash_160
-            script += push_script(hash_160.encode('hex'))
-            script += '88ac'                                     # op_equalverify, op_checksig
-        elif addrtype == 5:
-            script = 'a9'                                        # op_hash_160
-            script += push_script(hash_160.encode('hex'))
-            script += '87'                                       # op_equal
-        else:
-            raise
-        return script
+            addrtype, hash_160 = bc_address_to_hash_160(payto)
+            if addrtype == 8:
+                script = '76a9'                                      # op_dup, op_hash_160
+                script += push_script(hash_160.encode('hex'))
+                script += '88ac'                                     # op_equalverify, op_checksig
+            elif addrtype == 20:
+                script = 'a9'                                        # op_hash_160
+                script += push_script(hash_160.encode('hex'))
+                script += '87'                                       # op_equal
+            else:
+                raise
+            return script
 
 
     @classmethod
-    def serialize(klass, inputs, outputs, for_sig = None ):
-
+    def serialize(klass, timestamp, inputs, outputs, for_sig = None ):
         s  = int_to_hex(1,4)                                         # version
+        s += int_to_hex(timestamp, 4)                                # timestamp
         s += var_int( len(inputs) )                                  # number of inputs
         for i in range(len(inputs)):
             txin = inputs[i]
@@ -602,7 +609,7 @@ class Transaction:
 
             p2sh = txin.get('redeemScript') is not None
             num_sig = txin['num_sig']
-            address = txin['address']
+            payto = txin['address'] if txin["type"] == 'address' else txin['pubkeys'][0]
 
             x_signatures = txin['signatures']
             signatures = filter(lambda x: x is not None, x_signatures)
@@ -624,7 +631,8 @@ class Transaction:
                 sig_list = ''.join( map( lambda x: push_script(x), sig_list))
                 if not p2sh:
                     script = sig_list
-                    script += push_script(pubkeys[0])
+                    if txin["type"] != 'pubkey':
+                        script += push_script(pubkeys[0])
                 else:
                     script = '00'                                    # op_0
                     script += sig_list
@@ -632,7 +640,8 @@ class Transaction:
                     script += push_script(redeem_script)
 
             elif for_sig==i:
-                script = txin['redeemScript'] if p2sh else klass.pay_script('address', address)
+                script = txin['redeemScript'] if p2sh else klass.pay_script(txin["type"], payto)
+                print script
             else:
                 script = ''
             s += var_int( len(script)/2 )                            # script length
@@ -653,7 +662,7 @@ class Transaction:
 
 
     def tx_for_sig(self,i):
-        return self.serialize(self.inputs, self.outputs, for_sig = i)
+        return self.serialize(self.timestamp, self.inputs, self.outputs, for_sig = i)
 
 
     def hash(self):
@@ -667,7 +676,7 @@ class Transaction:
         txin['signatures'][ii] = sig
         txin['x_pubkeys'][ii] = pubkey
         self.inputs[i] = txin
-        self.raw = self.serialize(self.inputs, self.outputs)
+        self.raw = self.serialize(self.timestamp, self.inputs, self.outputs)
 
 
     def signature_count(self):
@@ -736,23 +745,25 @@ class Transaction:
                     secexp = pkey.secret
                     private_key = ecdsa.SigningKey.from_secret_exponent( secexp, curve = SECP256k1 )
                     public_key = private_key.get_verifying_key()
-                    sig = private_key.sign_digest_deterministic( for_sig, hashfunc=hashlib.sha256, sigencode = ecdsa.util.sigencode_der )
+                    sig = private_key.sign_digest_deterministic( for_sig, hashfunc=hashlib.sha256, sigencode = ecdsa.util.sigencode_der_canonize )
+
                     assert public_key.verify_digest( sig, for_sig, sigdecode = ecdsa.util.sigdecode_der)
                     self.add_signature(i, pubkey, sig.encode('hex'))
 
-
         print_error("is_complete", self.is_complete())
-        self.raw = self.serialize( self.inputs, self.outputs )
+        self.raw = self.serialize( self.timestamp, self.inputs, self.outputs )
 
 
     def add_pubkey_addresses(self, txlist):
         for i in self.inputs:
+            i["pubkey"] = False
             if i.get("address") == "(pubkey)":
                 prev_tx = txlist.get(i.get('prevout_hash'))
                 if prev_tx:
-                    address, value = prev_tx.get_outputs()[i.get('prevout_n')]
+                    type, address, value = prev_tx.get_outputs()[i.get('prevout_n')]
                     print_error("found pay-to-pubkey address:", address)
                     i["address"] = address
+                    i["type"] = type
 
 
     def get_outputs(self):
@@ -765,11 +776,12 @@ class Transaction:
                 addr = public_key_to_bc_address(x.decode('hex'))
             else:
                 addr = "(None)"
-            o.append((addr,v))
+            o.append((type,addr,v))
+#        print o
         return o
 
     def get_output_addresses(self):
-        return map(lambda x:x[0], self.get_outputs())
+        return map(lambda x:x[1], self.get_outputs())
 
 
     def has_address(self, addr):
@@ -808,7 +820,7 @@ class Transaction:
 
         if not is_send: is_partial = False
                     
-        for addr, value in self.get_outputs():
+        for type, addr, value in self.get_outputs():
             v_out += value
             if addr in addresses:
                 v_out_mine += value
@@ -847,15 +859,14 @@ class Transaction:
 
 
     def requires_fee(self, verifier):
-        # see https://en.bitcoin.it/wiki/Transaction_fees
         threshold = 57600000
         size = len(self.raw)/2
-        if size >= 10000: 
+        if size >= 1000:
             return True
 
         for o in self.get_outputs():
-            value = o[1]
-            if value < 1000000:
+            value = o[2]
+            if value < 10000:
                 return True
         sum = 0
         for i in self.inputs:

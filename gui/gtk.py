@@ -24,18 +24,18 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GObject, cairo
 from decimal import Decimal
-from electrum.util import print_error
-from electrum.bitcoin import is_valid
-from electrum import mnemonic, WalletStorage, Wallet
+from electrum_nvc.util import print_error
+from electrum_nvc.bitcoin import is_valid
+from electrum_nvc import mnemonic, WalletStorage, Wallet
 
 Gdk.threads_init()
-APP_NAME = "Electrum"
+APP_NAME = "Electrum-NVC"
 import platform
 MONOSPACE_FONT = 'Lucida Console' if platform.system() == 'Windows' else 'monospace'
 
-from electrum.util import format_satoshis, parse_URI
-from electrum.network import DEFAULT_SERVERS
-from electrum.bitcoin import MIN_RELAY_TX_FEE
+from electrum_nvc.util import format_satoshis, parse_URI
+from electrum_nvc.network import DEFAULT_SERVERS
+from electrum_nvc.bitcoin import MIN_RELAY_TX_FEE
 
 def numbify(entry, is_int = False):
     text = entry.get_text().strip()
@@ -48,7 +48,7 @@ def numbify(entry, is_int = False):
             s = s.replace('.','')
             s = s[:p] + '.' + s[p:p+8]
         try:
-            amount = int( Decimal(s) * 100000000 )
+            amount = int( Decimal(s) * 1000000 )
         except Exception:
             amount = None
     else:
@@ -164,7 +164,7 @@ def run_settings_dialog(self):
     fee_label.set_size_request(150,10)
     fee_label.show()
     fee.pack_start(fee_label,False, False, 10)
-    fee_entry.set_text( str( Decimal(self.wallet.fee) /100000000 ) )
+    fee_entry.set_text( str( Decimal(self.wallet.fee) /1000000 ) )
     fee_entry.connect('changed', numbify, False)
     fee_entry.show()
     fee.pack_start(fee_entry,False,False, 10)
@@ -196,7 +196,7 @@ def run_settings_dialog(self):
         return
 
     try:
-        fee = int( 100000000 * Decimal(fee) )
+        fee = int( 1000000 * Decimal(fee) )
     except Exception:
         show_message("error")
         return
@@ -696,7 +696,7 @@ class ElectrumWindow:
             #assume two outputs - one for change
             inputs, total, fee = self.wallet.choose_tx_inputs( amount, fee, 2 )
             if not is_fee:
-                fee_entry.set_text( str( Decimal( fee ) / 100000000 ) )
+                fee_entry.set_text( str( Decimal( fee ) / 1000000 ) )
                 self.fee_box.show()
             if inputs:
                 amount_entry.modify_text(Gtk.StateType.NORMAL, Gdk.color_parse("#000000"))
@@ -787,16 +787,16 @@ class ElectrumWindow:
             to_address = r
 
         if not is_valid(to_address):
-            self.show_message( "invalid bitcoin address:\n"+to_address)
+            self.show_message( "invalid novacoin address:\n"+to_address)
             return
 
         try:
-            amount = int( Decimal(amount_entry.get_text()) * 100000000 )
+            amount = int( Decimal(amount_entry.get_text()) * 1000000 )
         except Exception:
             self.show_message( "invalid amount")
             return
         try:
-            fee = int( Decimal(fee_entry.get_text()) * 100000000 )
+            fee = int( Decimal(fee_entry.get_text()) * 1000000 )
         except Exception:
             self.show_message( "invalid fee")
             return
@@ -890,7 +890,7 @@ class ElectrumWindow:
         treeview.append_column(tvcolumn)
         cell = Gtk.CellRendererPixbuf()
         tvcolumn.pack_start(cell, False)
-        tvcolumn.set_attributes(cell, stock_id=1)
+        tvcolumn.set_attributes(cell, stock_id=1) # here is an exception
 
         tvcolumn = Gtk.TreeViewColumn('Date')
         treeview.append_column(tvcolumn)
@@ -915,7 +915,7 @@ class ElectrumWindow:
         cell.connect('editing-started', editing_started, self.history_list)
         tvcolumn.set_expand(True)
         tvcolumn.pack_start(cell, True)
-        tvcolumn.set_attributes(cell, text=3, foreground_set = 4)
+        tvcolumn.set_attributes(cell, text=3, foreground_set = 4) # here is an exception
 
         tvcolumn = Gtk.TreeViewColumn('Amount')
         treeview.append_column(tvcolumn)
@@ -1209,8 +1209,8 @@ class ElectrumWindow:
         else:
             time_str = 'pending'
 
-        inputs = map(lambda x: x.get('address'), tx.inputs)
-        outputs = map(lambda x: x[0], tx.get_outputs())
+        inputs = map(lambda x: x.get('address') if not x.get('is_coinbase') else 'Coinbase', tx.inputs)
+        outputs = map(lambda x: x[1] if x[2] != 0 else 'Zero', tx.get_outputs())
         tx_details = "Transaction Details" +"\n\n" \
             + "Transaction ID:\n" + tx_hash + "\n\n" \
             + "Status: %d confirmations\n"%conf

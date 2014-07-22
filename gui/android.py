@@ -22,9 +22,9 @@
 from __future__ import absolute_import
 import android
 
-from electrum import SimpleConfig, Wallet, WalletStorage, format_satoshis, mnemonic_encode, mnemonic_decode
-from electrum.bitcoin import is_valid
-from electrum import util
+from electrum_nvc import SimpleConfig, Wallet, WalletStorage, format_satoshis, mnemonic_encode, mnemonic_decode
+from electrum_nvc.bitcoin import is_valid
+from electrum_nvc import util
 from decimal import Decimal
 import datetime, re
 
@@ -166,7 +166,7 @@ def make_layout(s, scrollable = False):
 
         <TextView
           android:id="@+id/textElectrum"
-          android:text="Electrum"
+          android:text="Electrum-NVC"
           android:textSize="7pt"
           android:textColor="#ff4444ff"
           android:gravity="left"
@@ -487,7 +487,7 @@ def make_new_contact():
     if r:
         data = r['extras']['SCAN_RESULT']
         if data:
-            if re.match('^bitcoin:', data):
+            if re.match('^novacoin:', data):
                 address, _, _, _, _ = util.parse_URI(data)
             elif is_valid(data):
                 address = data
@@ -595,11 +595,11 @@ def payto_loop():
                 amount = droid.fullQueryDetail('amount').result.get('text')
 
                 if not is_valid(recipient):
-                    modal_dialog('Error','Invalid Bitcoin address')
+                    modal_dialog('Error','Invalid Novacoin address')
                     continue
 
                 try:
-                    amount = int( 100000000 * Decimal(amount) )
+                    amount = int( 1000000 * Decimal(amount) )
                 except Exception:
                     modal_dialog('Error','Invalid amount')
                     continue
@@ -618,7 +618,7 @@ def payto_loop():
                 if r:
                     data = r['extras']['SCAN_RESULT']
                     if data:
-                        if re.match('^bitcoin:', data):
+                        if re.match('^novacoin:', data):
                             payto, amount, label, _, _ = util.parse_URI(data)
                             droid.fullSetProperty("recipient", "text",payto)
                             droid.fullSetProperty("amount", "text", amount)
@@ -761,7 +761,7 @@ def settings_loop():
 
     def set_listview():
         host, port, p = network.default_server.split(':')
-        fee = str( Decimal( wallet.fee)/100000000 )
+        fee = str( Decimal( wallet.fee)/1000000 )
         is_encrypted = 'yes' if wallet.use_encryption else 'no'
         protocol = protocol_name(p)
         droid.fullShow(settings_layout)
@@ -807,10 +807,10 @@ def settings_loop():
                     network_changed = True
 
             elif pos == "3": #fee
-                fee = modal_input('Transaction fee', 'The fee will be this amount multiplied by the number of inputs in your transaction. ', str( Decimal( wallet.fee)/100000000 ), "numberDecimal")
+                fee = modal_input('Transaction fee', 'The fee will be this amount multiplied by the number of inputs in your transaction. ', str( Decimal( wallet.fee)/1000000 ), "numberDecimal")
                 if fee:
                     try:
-                        fee = int( 100000000 * Decimal(fee) )
+                        fee = int( 1000000 * Decimal(fee) )
                     except Exception:
                         modal_dialog('error','invalid fee value')
                     wallet.set_fee(fee)

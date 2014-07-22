@@ -329,7 +329,7 @@ if __name__ == "__main__":
         uri = sys.argv[1]
     except:
         print "usage: %s url"%sys.argv[0]
-        print "example url: \"bitcoin:17KjQgnXC96jakzJe9yo8zxqerhqNptmhq?amount=0.0018&r=https%3A%2F%2Fbitpay.com%2Fi%2FMXc7qTM5f87EC62SWiS94z\""
+        print "example url: \"novacoin:4LJgtjeXMjLA6nVzYMJh1LEkwxMFsRtnP4?amount=0.0018&r=https%3A%2F%2Fsite.com%2F\""
         sys.exit(1)
 
     address, amount, label, message, request_url = util.parse_URI(uri)

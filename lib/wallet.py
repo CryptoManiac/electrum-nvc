@@ -36,8 +36,8 @@ from plugins import run_hook
 import bitcoin
 from synchronizer import WalletSynchronizer
 
-COINBASE_MATURITY = 100
-DUST_THRESHOLD = 5430
+COINBASE_MATURITY = 500
+DUST_THRESHOLD = 1000
 
 # internal ID for imported account
 IMPORTED_ACCOUNT = '/x'
@@ -76,7 +76,7 @@ class WalletStorage(object):
         new_path = os.path.join(config.path, "wallets", "default_wallet")
 
         # default path in pre 1.9 versions
-        old_path = os.path.join(config.path, "electrum.dat")
+        old_path = os.path.join(config.path, "electrum-nvc.dat")
         if os.path.exists(old_path) and not os.path.exists(new_path):
             os.rename(old_path, new_path)
 
@@ -146,7 +146,7 @@ class Abstract_Wallet(object):
 
         self.history               = storage.get('addr_history',{})        # address -> list(txid, height)
 
-        self.fee                   = int(storage.get('fee_per_kb', 10000))
+        self.fee                   = int(storage.get('fee_per_kb', 1000))
 
         self.next_addresses = storage.get('next_addresses',{})
 
@@ -181,7 +181,7 @@ class Abstract_Wallet(object):
         for k, raw in tx_list.items():
             try:
                 tx = Transaction.deserialize(raw)
-            except Exception:
+            except Exception, e:
                 print_msg("Warning: Cannot deserialize transactions. skipping")
                 continue
             self.add_pubkey_addresses(tx)
@@ -445,7 +445,7 @@ class Abstract_Wallet(object):
     def update_tx_outputs(self, tx_hash):
         tx = self.transactions.get(tx_hash)
 
-        for i, (addr, value) in enumerate(tx.get_outputs()):
+        for i, (type, addr, value) in enumerate(tx.get_outputs()):
             key = tx_hash+ ':%d'%i
             self.prevout_values[key] = value
 
@@ -465,7 +465,7 @@ class Abstract_Wallet(object):
             tx = self.transactions.get(tx_hash)
             if not tx: continue
 
-            for i, (addr, value) in enumerate(tx.get_outputs()):
+            for i, (type, addr, value) in enumerate(tx.get_outputs()):
                 if addr == address:
                     key = tx_hash + ':%d'%i
                     received_coins.append(key)
@@ -483,7 +483,7 @@ class Abstract_Wallet(object):
                     if key in received_coins:
                         v -= value
 
-            for i, (addr, value) in enumerate(tx.get_outputs()):
+            for i, (type, addr, value) in enumerate(tx.get_outputs()):
                 key = tx_hash + ':%d'%i
                 if addr == address:
                     v += value
@@ -536,8 +536,14 @@ class Abstract_Wallet(object):
             for tx_hash, tx_height in h:
                 tx = self.transactions.get(tx_hash)
                 if tx is None: raise Exception("Wallet not synchronized")
+                outputs = tx.get_outputs()
+
                 is_coinbase = tx.inputs[0].get('prevout_hash') == '0'*64
-                for i, (address, value) in enumerate(tx.get_outputs()):
+                is_coinstake = outputs[0][2] == 0
+
+                #print is_coinstake
+
+                for i, (type, address, value) in enumerate(outputs):
                     output = {'address':address, 'value':value, 'prevout_n':i}
                     if address != addr: continue
                     key = tx_hash + ":%d"%i
@@ -545,6 +551,8 @@ class Abstract_Wallet(object):
                     output['prevout_hash'] = tx_hash
                     output['height'] = tx_height
                     output['coinbase'] = is_coinbase
+                    output['coinstake'] = is_coinstake
+                    output["type"] = type
                     coins.append((tx_height, output))
 
         # sort by age
@@ -570,7 +578,7 @@ class Abstract_Wallet(object):
         inputs = []
 
         for item in coins:
-            if item.get('coinbase') and item.get('height') + COINBASE_MATURITY > self.network.get_local_height():
+            if (item.get('coinbase') or item.get('coinstake')) and item.get('height') + COINBASE_MATURITY < self.network.get_local_height():
                 continue
             v = item.get('value')
             total += v
@@ -745,7 +753,7 @@ class Abstract_Wallet(object):
         for txin in inputs:
             self.add_input_info(txin)
         outputs = self.add_tx_change(inputs, outputs, amount, fee, total, change_addr)
-        return Transaction(inputs, outputs)
+        return Transaction(int(time.time()), inputs, outputs)
 
     def mktx(self, outputs, password, fee=None, change_addr=None, domain= None, coins = None ):
         tx = self.make_unsigned_transaction(outputs, fee, change_addr, domain, coins)

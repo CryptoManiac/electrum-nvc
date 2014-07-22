@@ -24,7 +24,7 @@ class AmountEdit(MyLineEdit):
         self.help_palette = QPalette()
 
     def decimal_point(self):
-        return 8
+        return 6
 
     def numbify(self):
         text = unicode(self.text()).strip()
@@ -69,11 +69,11 @@ class BTCAmountEdit(AmountEdit):
 
     def _base_unit(self):
         p = self.decimal_point()
-        assert p in [2, 5, 8]
-        if p == 8:
-            return 'BTC'
-        if p == 5:
-            return 'mBTC'
+        assert p in [2, 3, 6]
+        if p == 6:
+            return 'NVC'
+        if p == 3:
+            return 'mNVC'
         if p == 2:
             return 'bits'
         raise Exception('Unknown base unit')

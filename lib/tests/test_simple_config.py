@@ -174,7 +174,7 @@ everything = 42
         os.remove(self.thefile)
 
     def test_read_system_config_file_does_not_exist(self):
-        somefile = "/foo/I/do/not/exist/electrum.conf"
+        somefile = "/foo/I/do/not/exist/electrum-nvc.conf"
         result = read_system_config(somefile)
         self.assertEqual({}, result)
 

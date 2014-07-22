@@ -43,11 +43,11 @@ def print_json(obj):
 
 def user_dir():
     if "HOME" in os.environ:
-        return os.path.join(os.environ["HOME"], ".electrum")
+        return os.path.join(os.environ["HOME"], ".electrum-nvc")
     elif "APPDATA" in os.environ:
-        return os.path.join(os.environ["APPDATA"], "Electrum")
+        return os.path.join(os.environ["APPDATA"], "Electrum-NVC")
     elif "LOCALAPPDATA" in os.environ:
-        return os.path.join(os.environ["LOCALAPPDATA"], "Electrum")
+        return os.path.join(os.environ["LOCALAPPDATA"], "Electrum-NVC")
     elif 'ANDROID_DATA' in os.environ:
         return "/sdcard/electrum/"
     else:
@@ -57,15 +57,15 @@ def user_dir():
 def appdata_dir():
     """Find the path to the application data directory; add an electrum folder and return path."""
     if platform.system() == "Windows":
-        return os.path.join(os.environ["APPDATA"], "Electrum")
+        return os.path.join(os.environ["APPDATA"], "Electrum-NVC")
     elif platform.system() == "Linux":
-        return os.path.join(sys.prefix, "share", "electrum")
+        return os.path.join(sys.prefix, "share", "electrum-nvc")
     elif (platform.system() == "Darwin" or
           platform.system() == "DragonFly" or
           platform.system() == "OpenBSD" or
           platform.system() == "FreeBSD" or
 	  platform.system() == "NetBSD"):
-        return "/Library/Application Support/Electrum"
+        return "/Library/Application Support/Electrum-NVC"
     else:
         raise Exception("Unknown system")
 
@@ -82,7 +82,7 @@ def local_data_dir():
     return local_data
 
 
-def format_satoshis(x, is_diff=False, num_zeros = 0, decimal_point = 8, whitespaces=False):
+def format_satoshis(x, is_diff=False, num_zeros = 0, decimal_point = 6, whitespaces=False):
     from decimal import Decimal
     s = Decimal(x)
     sign, digits, exp = s.as_tuple()
@@ -186,7 +186,7 @@ def parse_URI(uri):
             k = int(m.group(2)) - 8
             amount = Decimal(m.group(1)) * pow(  Decimal(10) , k)
         else:
-            amount = Decimal(am) * 100000000
+            amount = Decimal(am) * 1000000
     if 'message' in pq:
         message = pq['message'][0]
     if 'label' in pq:

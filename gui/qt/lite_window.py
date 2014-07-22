@@ -13,31 +13,31 @@ except ImportError:
     sys.exit(0)
 
 from decimal import Decimal as D
-from electrum.util import get_resource_path as rsrc
-from electrum.bitcoin import is_valid
-from electrum.i18n import _
+from electrum_nvc.util import get_resource_path as rsrc
+from electrum_nvc.bitcoin import is_valid
+from electrum_nvc.i18n import _
 import decimal
 import json
 import os.path
 import random
 import re
 import time
-from electrum.wallet import Wallet, WalletStorage
+from electrum_nvc.wallet import Wallet, WalletStorage
 import webbrowser
 import history_widget
 import receiving_widget
-from electrum import util
+from electrum_nvc import util
 import datetime
 
-from electrum.version import ELECTRUM_VERSION as electrum_version
-from electrum.util import format_satoshis, age
+from electrum_nvc.version import ELECTRUM_VERSION as electrum_version
+from electrum_nvc.util import format_satoshis, age
 
 from main_window import ElectrumWindow
 import shutil
 
 from util import *
 
-bitcoin = lambda v: v * 100000000
+bitcoin = lambda v: v * 1000000
 
 def IconButton(filename, parent=None):
     pixmap = QPixmap(filename)
@@ -142,14 +142,14 @@ class MiniWindow(QDialog):
 
         # Bitcoin address code
         self.address_input = QLineEdit()
-        self.address_input.setPlaceholderText(_("Enter a Bitcoin address or contact"))
+        self.address_input.setPlaceholderText(_("Enter a Novacoin address or contact"))
         self.address_input.setObjectName("address_input")
 
         self.address_input.setFocusPolicy(Qt.ClickFocus)
 
         self.address_input.textChanged.connect(self.address_field_changed)
         resize_line_edit_width(self.address_input,
-                               "1BtaFUr3qVvAmwrsuDuu5zk6e4s2rxd2Gy")
+                               "4LJgtjeXMjLA6nVzYMJh1LEkwxMFsRtnP4")
 
         self.address_completions = QStringListModel()
         address_completer = QCompleter(self.address_input)
@@ -254,7 +254,7 @@ class MiniWindow(QDialog):
         self.toggle_receiving_layout(show_hist)
         
         self.setWindowIcon(QIcon(":icons/electrum.png"))
-        self.setWindowTitle("Electrum")
+        self.setWindowTitle("Electrum-NVC")
         self.setWindowFlags(Qt.Window|Qt.MSWindowsFixedSizeDialogHint)
         self.layout().setSizeConstraint(QLayout.SetFixedSize)
         self.setObjectName("main_window")
@@ -388,7 +388,7 @@ class MiniWindow(QDialog):
     def create_quote_text(self, btc_balance):
         """Return a string copy of the amount fiat currency the 
         user has in bitcoins."""
-        from electrum.plugins import run_hook
+        from electrum_nvc.plugins import run_hook
         r = {}
         run_hook('get_fiat_balance_text', btc_balance, r)
         return r.get(0,'')
@@ -575,7 +575,7 @@ class ReceivePopup(QDialog):
         self.close()
 
     def setup(self, address):
-        label = QLabel(_("Copied your Bitcoin address to the clipboard!"))
+        label = QLabel(_("Copied your Novacoin address to the clipboard!"))
         address_display = QLineEdit(address)
         address_display.setReadOnly(True)
         resize_line_edit_width(address_display, address)
@@ -585,7 +585,7 @@ class ReceivePopup(QDialog):
         main_layout.addWidget(address_display)
 
         self.setMouseTracking(True)
-        self.setWindowTitle("Electrum - " + _("Receive Bitcoin payment"))
+        self.setWindowTitle("Electrum - " + _("Receive Novacoin payment"))
         self.setWindowFlags(Qt.Window|Qt.FramelessWindowHint|
                             Qt.MSWindowsFixedSizeDialogHint)
         self.layout().setSizeConstraint(QLayout.SetFixedSize)
@@ -697,7 +697,7 @@ class MiniActuator:
 
         if dest_address is None or not is_valid(dest_address):
             QMessageBox.warning(parent_window, _('Error'), 
-                _('Invalid Bitcoin Address') + ':\n' + address, _('OK'))
+                _('Invalid Novacoin Address') + ':\n' + address, _('OK'))
             return False
 
         amount = D(unicode(amount)) * (10*self.g.decimal_point)
@@ -713,9 +713,9 @@ class MiniActuator:
             password = None
 
         fee = 0
-        # 0.1 BTC = 10000000
+        # 0.1 NVC = 100000
         if amount < bitcoin(1) / 10:
-            # 0.001 BTC
+            # 0.001 NVC
             fee = bitcoin(1) / 1000
 
         try:

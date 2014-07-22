@@ -1,4 +1,4 @@
-Electrum - lightweight Bitcoin client
+Electrum - lightweight Novacoin client
 
 Licence: GNU GPL v3
 Author: Thomas Voegtlin
@@ -11,13 +11,13 @@ Homepage: https://electrum.org/
 
 To run Electrum from this directory, just do:
 
-  ./electrum
+  ./electrum-nvc
 
 If you install Electrum on your system, you can run it from any
 directory:
 
   sudo python setup.py install
-  electrum
+  electrum-nvc
 
 
 To start Electrum from your web browser, see
@@ -40,6 +40,6 @@ On Mac OS X:
   # On brew installs
   ARCHFLAGS="-arch i386 -arch x86_64" sudo python setup-release.py py2app --includes sip
 
-  sudo hdiutil create -fs HFS+ -volname "Electrum" -srcfolder dist/Electrum.app dist/electrum-VERSION-macosx.dmg
+  sudo hdiutil create -fs HFS+ -volname "Electrum-NVC" -srcfolder dist/Electrum-NVC.app dist/electrum-nvc-VERSION-macosx.dmg
 
 

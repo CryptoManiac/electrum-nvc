@@ -21,6 +21,11 @@ import threading, time, Queue, os, sys, shutil
 from util import user_dir, appdata_dir, print_error
 from bitcoin import *
 
+try:
+    from ltc_scrypt import getPoWHash
+except ImportError:
+    print_msg("Warning: scrypt not available, using fallback")
+    from scrypt import scrypt_1024_1_1_80 as getPoWHash
 
 class Blockchain(threading.Thread):
 
@@ -32,7 +37,7 @@ class Blockchain(threading.Thread):
         self.lock = threading.Lock()
         self.local_height = 0
         self.running = False
-        self.headers_url = 'http://headers.electrum.org/blockchain_headers'
+        self.headers_url = 'http://novacoin.su/static/blockchain_headers'
         self.set_local_height()
         self.queue = Queue.Queue()
 
@@ -102,7 +107,15 @@ class Blockchain(threading.Thread):
 
 
                     
-            
+    def calculate_target(self, bits):
+        # convert to bignum
+        MM = 256*256*256
+        a = bits%MM
+        if a < 0x8000:
+            a *= 256
+        return (a) * pow(2, 8 * (bits/MM - 3))
+
+
     def verify_chain(self, chain):
 
         first_header = chain[0]
@@ -113,12 +126,12 @@ class Blockchain(threading.Thread):
             height = header.get('block_height')
 
             prev_hash = self.hash_header(prev_header)
-            bits, target = self.get_target(height/2016, chain)
-            _hash = self.hash_header(header)
+            header_hash = self.hash_header(header)
+
             try:
                 assert prev_hash == header.get('prev_block_hash')
-                assert bits == header.get('bits')
-                assert int('0x'+_hash,16) < target
+                if header.get('nonce') != 0:
+                    assert int('0x'+_hash,16) < self.calculate_target(header.get('bits'))
             except Exception:
                 return False
 
@@ -138,21 +151,20 @@ class Blockchain(threading.Thread):
         else:
             prev_header = self.read_header(index*2016-1)
             if prev_header is None: raise
-            previous_hash = self.hash_header(prev_header)
-
-        bits, target = self.get_target(index)
+            _hash = self.hash_header(prev_header)
 
         for i in range(num):
             height = index*2016 + i
             raw_header = data[i*80:(i+1)*80]
             header = self.header_from_string(raw_header)
-            _hash = self.hash_header(header)
+            header_hash = self.hash_header(header)
+
             assert previous_hash == header.get('prev_block_hash')
-            assert bits == header.get('bits')
-            assert int('0x'+_hash,16) < target
+            if header.get('nonce') != 0:
+                assert int('0x'+header_hash,16) < calculate_target(header.get('bits'))
 
             previous_header = header
-            previous_hash = _hash 
+            previous_hash = header_hash 
 
         self.save_chunk(index, data)
         print_error("validated chunk %d"%height)
@@ -181,7 +193,7 @@ class Blockchain(threading.Thread):
         return h
 
     def hash_header(self, header):
-        return rev_hex(Hash(self.header_to_string(header).decode('hex')).encode('hex'))
+        return rev_hex(getPoWHash(self.header_to_string(header).decode('hex')).encode('hex'))
 
     def path(self):
         return os.path.join( self.config.path, 'blockchain_headers')
@@ -239,53 +251,6 @@ class Blockchain(threading.Thread):
             if len(h) == 80:
                 h = self.header_from_string(h)
                 return h 
-
-
-    def get_target(self, index, chain=None):
-        if chain is None:
-            chain = []  # Do not use mutables as default values!
-
-        max_target = 0x00000000FFFF0000000000000000000000000000000000000000000000000000
-        if index == 0: return 0x1d00ffff, max_target
-
-        first = self.read_header((index-1)*2016)
-        last = self.read_header(index*2016-1)
-        if last is None:
-            for h in chain:
-                if h.get('block_height') == index*2016-1:
-                    last = h
- 
-        nActualTimespan = last.get('timestamp') - first.get('timestamp')
-        nTargetTimespan = 14*24*60*60
-        nActualTimespan = max(nActualTimespan, nTargetTimespan/4)
-        nActualTimespan = min(nActualTimespan, nTargetTimespan*4)
-
-        bits = last.get('bits') 
-        # convert to bignum
-        MM = 256*256*256
-        a = bits%MM
-        if a < 0x8000:
-            a *= 256
-        target = (a) * pow(2, 8 * (bits/MM - 3))
-
-        # new target
-        new_target = min( max_target, (target * nActualTimespan)/nTargetTimespan )
-        
-        # convert it to bits
-        c = ("%064X"%new_target)[2:]
-        i = 31
-        while c[0:2]=="00":
-            c = c[2:]
-            i -= 1
-
-        c = int('0x'+c[0:6],16)
-        if c >= 0x800000: 
-            c /= 256
-            i += 1
-
-        new_bits = c + MM * i
-        return new_bits, new_target
-
 
     def request_header(self, i, h, queue):
         print_error("requesting header %d from %s"%(h, i.server))

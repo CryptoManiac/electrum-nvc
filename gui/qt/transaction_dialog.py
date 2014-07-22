@@ -17,8 +17,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import sys, time, datetime, re, threading
-from electrum.i18n import _, set_language
-from electrum.util import print_error, print_msg
+from electrum_nvc.i18n import _, set_language
+from electrum_nvc.util import print_error, print_msg
 import os.path, json, ast, traceback
 import shutil
 import StringIO
@@ -33,8 +33,8 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 import PyQt4.QtCore as QtCore
 
-from electrum import transaction
-from electrum.plugins import run_hook
+from electrum_nvc import transaction
+from electrum_nvc.plugins import run_hook
 
 from util import MyTreeWidget
 
@@ -212,7 +212,7 @@ class TxDialog(QDialog):
         vbox.addWidget(i_text)
 
         vbox.addWidget(QLabel(_("Outputs")))
-        lines = map(lambda x: x[0] + u'\t\t' + self.parent.format_amount(x[1]), self.tx.get_outputs())
+        lines = map(lambda x: x[1] + u'\t\t' + self.parent.format_amount(x[2]), self.tx.get_outputs())
         o_text = QTextEdit()
         o_text.setText('\n'.join(lines))
         o_text.setReadOnly(True)

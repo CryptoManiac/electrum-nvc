@@ -27,7 +27,13 @@ language = gettext.translation('electrum', LOCALE_DIR, fallback = True)
 
 def _(x):
     global language
-    return language.ugettext(x)
+    dic = [('Bitcoin', 'Novacoin'), ('bitcoin', 'novacoin')]
+    for b, l in dic:
+        x = x.replace(l, b)
+    t = language.ugettext(x)
+    for b, l in dic:
+        t = t.replace(b, l)
+    return t
 
 def set_language(x):
     global language
