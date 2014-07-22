@@ -62,7 +62,7 @@ setup(
         'electrum_nvc_gui': 'gui',
         'electrum_nvc_plugins': 'plugins',
     },
-    scripts=['electrum'],
+    scripts=['electrum-nvc'],
     data_files=data_files,
     py_modules=[
         'electrum_nvc.account',
@@ -88,7 +88,7 @@ setup(
         'electrum_nvc.verifier',
         'electrum_nvc.version',
         'electrum_nvc.wallet',
-        'electrum_nvc.wallet_bitkey',
+#        'electrum_nvc.wallet_bitkey',
         'electrum_nvc.x509',
         'electrum_nvc_gui.gtk',
         'electrum_nvc_gui.qt.__init__',

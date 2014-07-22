@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     os.chdir("dist")
     # create the zip file
-    os.system( "zip -r e4na-%s.zip en4a-%s"%(version, version) )
+    os.system( "zip -r en4a-%s.zip en4a-%s"%(version, version) )
     os.system( "rm -rf en4a-%s"%(version) )
 
     # change filename because some 3G carriers do not allow users to download a zip file...
