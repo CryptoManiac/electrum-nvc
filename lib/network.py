@@ -7,7 +7,7 @@ from blockchain import Blockchain
 DEFAULT_PORTS = {'t':'50001', 's':'50002', 'h':'8081', 'g':'8082'}
 
 DEFAULT_SERVERS = {
-    '127.0.0.1': DEFAULT_PORTS,
+#    '127.0.0.1': DEFAULT_PORTS,
     '193.23.181.148': DEFAULT_PORTS,
     '91.235.143.61': DEFAULT_PORTS,
 }
