@@ -8,7 +8,7 @@
 
   ;Name and file
   Name "Electrum-NVC"
-  OutFile "dist/electrum-setup.exe"
+  OutFile "dist/electrum-nvc-setup.exe"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\Electrum-NVC"
@@ -59,7 +59,7 @@ Section
   SetOutPath "$INSTDIR"
 
   ;ADD YOUR OWN FILES HERE...
-  file /r dist\electrum\*.*
+  file /r dist\electrum-nvc\*.*
 
   ;Store installation folder
   WriteRegStr HKCU "Software\Electrum-NVC" "" $INSTDIR
@@ -68,12 +68,12 @@ Section
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
 
-  CreateShortCut "$DESKTOP\Electrum.lnk" "$INSTDIR\electrum.exe" ""
+  CreateShortCut "$DESKTOP\Electrum-NVC.lnk" "$INSTDIR\electrum-nvc.exe" ""
 
   ;create start-menu items
   CreateDirectory "$SMPROGRAMS\Electrum-NVC"
   CreateShortCut "$SMPROGRAMS\Electrum\Uninstall.lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0
-  CreateShortCut "$SMPROGRAMS\Electrum\Electrum.lnk" "$INSTDIR\electrum.exe" "" "$INSTDIR\electrum.exe" 0
+  CreateShortCut "$SMPROGRAMS\Electrum\Electrum-NVC.lnk" "$INSTDIR\electrum-nvc.exe" "" "$INSTDIR\electrum-nvc.exe" 0
 
 SectionEnd
 
@@ -95,8 +95,8 @@ Section "Uninstall"
 
   RMDir "$INSTDIR"
 
-  Delete "$DESKTOP\Electrum.lnk"
-  Delete "$SMPROGRAMS\Electrum\*.*"
+  Delete "$DESKTOP\Electrum-NVC.lnk"
+  Delete "$SMPROGRAMS\Electrum-NVC\*.*"
   RmDir  "$SMPROGRAMS\Electrum-NVC"
 
   DeleteRegKey /ifempty HKCU "Software\Electrum-NVC"

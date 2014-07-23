@@ -63,6 +63,6 @@ wget -q -O nsis.exe "http://prdownloads.sourceforge.net/nsis/nsis-2.46-setup.exe
 wine nsis.exe
 
 # Install UPX
-#wget -O upx.zip "http://upx.sourceforge.net/download/upx308w.zip"
-#unzip -o upx.zip
-#cp upx*/upx.exe .
+wget -O upx.zip "http://upx.sourceforge.net/download/upx308w.zip"
+unzip -o upx.zip
+cp upx*/upx.exe .

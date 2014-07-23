@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # You probably need to update only this link
-ELECTRUM_GIT_URL=git://github.com/spesmilo/electrum.git
+ELECTRUM_GIT_URL=git://github.com/CryptoManiac/electrum-nvc.git
 BRANCH=master
 NAME_ROOT=electrum
 
@@ -37,12 +37,12 @@ echo "Last commit: $COMMIT_HASH"
 cd ..
 
 
-rm -rf $WINEPREFIX/drive_c/electrum
-cp -r electrum-git $WINEPREFIX/drive_c/electrum
+rm -rf $WINEPREFIX/drive_c/electrum-nvc
+cp -r electrum-git $WINEPREFIX/drive_c/electrum-nvc
 cp electrum-git/LICENCE .
 
 # Build Qt resources
-wine $WINEPREFIX/drive_c/Python26/Lib/site-packages/PyQt4/pyrcc4.exe C:/electrum/icons.qrc -o C:/electrum/lib/icons_rc.py
+wine $WINEPREFIX/drive_c/Python26/Lib/site-packages/PyQt4/pyrcc4.exe C:/electrum-nvc/icons.qrc -o C:/electrum-nvc/lib/icons_rc.py
 
 # Copy ZBar libraries to electrum
 #cp "$WINEPREFIX/drive_c/Program Files (x86)/ZBar/bin/"*.dll "$WINEPREFIX/drive_c/electrum/"
@@ -52,7 +52,7 @@ cd ..
 rm -rf dist/
 
 # For building standalone compressed EXE, run:
-$PYTHON "C:/pyinstaller/pyinstaller.py" --noconfirm --ascii -w --onefile "C:/electrum/electrum"
+$PYTHON "C:/pyinstaller/pyinstaller.py" --noconfirm --ascii -w --onefile "C:/electrum-nvc/electrum-nvc"
 
 # For building uncompressed directory of dependencies, run:
 $PYTHON "C:/pyinstaller/pyinstaller.py" --noconfirm --ascii -w deterministic.spec
@@ -63,7 +63,7 @@ wine "$WINEPREFIX/drive_c/Program Files (x86)/NSIS/makensis.exe" electrum.nsi
 
 DATE=`date +"%Y%m%d"`
 cd dist
-mv electrum.exe $NAME_ROOT-$DATE-$COMMIT_HASH.exe
-mv electrum $NAME_ROOT-$DATE-$COMMIT_HASH
-mv electrum-setup.exe $NAME_ROOT-$DATE-$COMMIT_HASH-setup.exe
+mv electrum-nvc.exe $NAME_ROOT-$DATE-$COMMIT_HASH.exe
+mv electrum-nvc $NAME_ROOT-$DATE-$COMMIT_HASH
+mv electrum-nvc-setup.exe $NAME_ROOT-$DATE-$COMMIT_HASH-setup.exe
 zip -r $NAME_ROOT-$DATE-$COMMIT_HASH.zip $NAME_ROOT-$DATE-$COMMIT_HASH
