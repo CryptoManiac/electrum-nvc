@@ -578,7 +578,7 @@ class Abstract_Wallet(object):
         inputs = []
 
         for item in coins:
-            if (item.get('coinbase') or item.get('coinstake')) and item.get('height') + COINBASE_MATURITY < self.network.get_local_height():
+            if (item.get('coinbase') or item.get('coinstake')) and item.get('height') + COINBASE_MATURITY > self.network.get_local_height():
                 continue
             v = item.get('value')
             total += v
