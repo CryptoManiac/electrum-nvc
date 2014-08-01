@@ -4,7 +4,7 @@ from bitcoin import *
 import interface
 from blockchain import Blockchain
 
-DEFAULT_PORTS = {'t':'50001', 's':'50002', 'h':'8081', 'g':'8082'}
+DEFAULT_PORTS = {'t':'40001', 's':'40002', 'h':'7081', 'g':'7082'}
 
 DEFAULT_SERVERS = {
 #    '127.0.0.1': DEFAULT_PORTS,

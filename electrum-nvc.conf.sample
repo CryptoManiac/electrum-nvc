@@ -6,7 +6,7 @@
 # that can be rewritten by the client
 
 [client]
-server = 127.0.0.1:50001:t
+server = 193.23.181.148:40001:t
 proxy = None
 gap_limit = 5
 # booleans use python syntax
